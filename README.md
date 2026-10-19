@@ -33,3 +33,8 @@ Plugin URI: https://github.com/TABARC-Code/
 
 This repo won't magically heal your machine.
 It’ll just point at the corpse and say which bits are missing.
+
+
+## Sensitive data
+
+`Snapshot-Env.ps1` now redacts environment variables with credential-like names by default. The snapshot marks these entries as `redacted`. The optional `-IncludeSensitive` flag stores their actual values and should only be used in a protected local environment. Name-based filtering is a precaution, not a guarantee that all secrets will be detected. Review and protect snapshots before sharing them.
