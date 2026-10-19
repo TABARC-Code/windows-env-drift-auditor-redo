@@ -76,21 +76,19 @@ try {
 $tools = @()
 foreach($t in $ToolNames){
   $cmd = Get-Command $t -ErrorAction SilentlyContinue
+  $toolVersion = $null
+  if ($cmd) {
+    try {
+      $toolVersion = (& $t --version 2>&1) -join ' '
+    } catch {
+      $toolVersion = $null
+    }
+  }
   $tools += [pscustomobject]@{
-    name=$t
-    found=([bool]$cmd)
-    source=if($cmd){$cmd.Source}else{$null}
-    version=(
-      try {
-        if($t -eq "python"){ (& python --version 2>&1) -join " " }
-        elseif($t -eq "git"){ (& git --version 2>&1) -join " " }
-        elseif($t -eq "node"){ (& node --version 2>&1) -join " " }
-        elseif($t -eq "npm"){ (& npm --version 2>&1) -join " " }
-        elseif($t -eq "pwsh"){ (& pwsh --version 2>&1) -join " " }
-        elseif($t -eq "dotnet"){ (& dotnet --version 2>&1) -join " " }
-        else { $null }
-      } catch { $null }
-    )
+    name = $t
+    found = [bool]$cmd
+    source = if ($cmd) { $cmd.Source } else { $null }
+    version = $toolVersion
   }
 }
 
