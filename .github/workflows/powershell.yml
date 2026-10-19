@@ -1,0 +1,41 @@
+name: PowerShell validation
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse on Windows PowerShell 5.1
+        shell: powershell
+        run: |
+          $files = @(Get-ChildItem -Path . -Filter '*.ps1' -File -Recurse)
+          foreach ($file in $files) {
+            $tokens = $null
+            $errors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($file.FullName,[ref]$tokens,[ref]$errors)
+            if ($errors.Count -gt 0) {
+              $errors | ForEach-Object { Write-Host "$($file.FullName): $_" }
+              throw "Parse failure: $($file.Name)"
+            }
+          }
+          Write-Host "Parsed $($files.Count) scripts in Windows PowerShell 5.1"
+      - name: Parse on PowerShell 7
+        shell: pwsh
+        run: |
+          $files = @(Get-ChildItem -Path . -Filter '*.ps1' -File -Recurse)
+          foreach ($file in $files) {
+            $tokens = $null
+            $errors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile($file.FullName,[ref]$tokens,[ref]$errors)
+            if ($errors.Count -gt 0) {
+              $errors | ForEach-Object { Write-Host "$($file.FullName): $_" }
+              throw "Parse failure: $($file.Name)"
+            }
+          }
+          Write-Host "Parsed $($files.Count) scripts in PowerShell 7"
+      - name: Test Change Detective fixtures
+        shell: pwsh
+        run: .\tests\Change-Detective.Tests.ps1
