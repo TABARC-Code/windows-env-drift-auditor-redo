@@ -7,7 +7,8 @@
 [CmdletBinding()]
 param(
   [string]$OutDir = "$PSScriptRoot\snapshots",
-  [string[]]$ToolNames = @("python","git","node","npm","pwsh","dotnet")
+  [string[]]$ToolNames = @("python","git","node","npm","pwsh","dotnet"),
+  [switch]$IncludeSensitive
 )
 
 Set-StrictMode -Version Latest
@@ -22,8 +23,15 @@ function NormPath([string]$p){
   $p.Trim() -replace '[\\/]+','\\' 
 }
 
+# Keep credential-bearing environment values out of snapshots by default.
+$secretNamePattern = '(?i)(PASSWORD|PASSWD|TOKEN|SECRET|CREDENTIAL|AUTH|API.?KEY|ACCESS.?KEY|PRIVATE.?KEY|SESSION|COOKIE|CONNECTION.?STRING)'
 $envVars = Get-ChildItem Env: | Sort-Object Name | ForEach-Object {
-  [pscustomobject]@{ name=$_.Name; value=$_.Value }
+  $sensitive = $_.Name -match $secretNamePattern
+  [pscustomobject]@{
+    name = $_.Name
+    value = if ($sensitive -and -not $IncludeSensitive) { '[REDACTED]' } else { $_.Value }
+    redacted = [bool]($sensitive -and -not $IncludeSensitive)
+  }
 }
 
 $pathRaw = $env:PATH
@@ -87,6 +95,7 @@ foreach($t in $ToolNames){
 }
 
 $data = [ordered]@{
+  sensitiveValuesIncluded = [bool]$IncludeSensitive
   time=(Get-Date).ToString("o")
   computer=$env:COMPUTERNAME
   user=$env:USERNAME
