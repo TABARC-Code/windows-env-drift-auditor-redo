@@ -51,11 +51,11 @@ $apps = @()
 foreach($p in $uninstallPaths){
   try {
     $apps += Get-ItemProperty $p -ErrorAction SilentlyContinue | ForEach-Object {
-      if (-not $_.DisplayName) { return }
+      if (-not $_.PSObject.Properties['DisplayName'] -or -not $_.DisplayName) { return }
       [pscustomobject]@{
         name = $_.DisplayName
-        version = $_.DisplayVersion
-        publisher = $_.Publisher
+        version = if ($_.PSObject.Properties['DisplayVersion']) { $_.DisplayVersion } else { $null }
+        publisher = if ($_.PSObject.Properties['Publisher']) { $_.Publisher } else { $null }
       }
     }
   } catch {}
